@@ -1,6 +1,6 @@
 import { useEffect, type ReactNode } from "react";
 import { Pressable, Text, View } from "react-native";
-import { Link } from "expo-router";
+import { router } from "expo-router";
 import Animated, {
   FadeInDown,
   useAnimatedStyle,
@@ -111,6 +111,7 @@ function StatusNode({
 
 function LessonCard({
   lesson,
+  topicId,
   topicColor,
   isLast,
   isNext,
@@ -119,6 +120,7 @@ function LessonCard({
   pressStyle,
 }: {
   lesson: Lesson;
+  topicId: string;
   topicColor: string;
   isLast: boolean;
   isNext: boolean;
@@ -126,11 +128,19 @@ function LessonCard({
   onPressOut: () => void;
   pressStyle: ReturnType<typeof useAnimatedStyle>;
 }) {
+  const openLesson = () => {
+    if (lesson.is_locked) return;
+    router.push(`/roadmap/${topicId}/${lesson.id}`);
+  };
+
   return (
     <AnimatedPressable
       disabled={lesson.is_locked}
+      onPress={openLesson}
       onPressIn={onPressIn}
       onPressOut={onPressOut}
+      accessibilityRole="button"
+      accessibilityLabel={`Open lesson: ${lesson.title}`}
       style={[{ flex: 1, marginBottom: isLast ? 0 : 12 }, pressStyle]}
       className="rounded-2xl border border-white/10 p-3.5 overflow-hidden"
     >
@@ -192,6 +202,7 @@ export function LessonTrackNode({
 
   const cardProps = {
     lesson,
+    topicId,
     topicColor,
     isLast,
     isNext,
@@ -218,15 +229,9 @@ export function LessonTrackNode({
         ) : null}
       </View>
 
-      {lesson.is_locked ? (
+      <View style={{ flex: 1 }}>
         <LessonCard {...cardProps} />
-      ) : (
-        <View style={{ flex: 1 }}>
-          <Link href={`/roadmap/${topicId}/${lesson.id}`} asChild>
-            <LessonCard {...cardProps} />
-          </Link>
-        </View>
-      )}
+      </View>
     </Animated.View>
   );
 }

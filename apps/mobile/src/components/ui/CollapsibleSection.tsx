@@ -56,7 +56,11 @@ export function CollapsibleBody({ expanded, children, className }: CollapsibleBo
   }));
 
   return (
-    <Animated.View style={containerStyle} className={className}>
+    <Animated.View
+      style={containerStyle}
+      className={className}
+      pointerEvents={expanded ? "auto" : "none"}
+    >
       <Animated.View
         style={innerStyle}
         onLayout={(event) => {
