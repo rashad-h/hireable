@@ -6,19 +6,17 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { getProgress, getRoadmap, getRoadmapSummary } from "@/api/client";
 import { SkillTreeDiagram } from "@/components/cv/SkillTreeDiagram";
 import { LoadingSkeleton } from "@/components/cv/UploadCard";
+import { MascotFunFact } from "@/components/gamification/MascotFunFact";
 import { LevelBadge, XPBar } from "@/components/gamification/XPBar";
 import { XPPopup } from "@/components/gamification/XPPopup";
 import {
   CollapsibleTopicSection,
   defaultExpandedTopicIds,
 } from "@/components/roadmap/LessonTrackNode";
-import { Card } from "@/components/ui/Card";
 import { useAppStore, useStoreHydrated } from "@/stores/useAppStore";
+import { topicFunFactFallback } from "@/utils/mascot";
 import { applyLessonProgressToTree } from "@/utils/skillTreeProgress";
-
-function roleFunFactFallback(targetRole: string) {
-  return `Did you know? ${targetRole} is one of the most searched job titles on LinkedIn right now — and the skills employers want change faster than almost any other role.`;
-}
+import { calculateLevel } from "@/utils/xp";
 
 export default function RoadmapScreen() {
   const params = useLocalSearchParams<{ roadmapId?: string }>();
@@ -29,6 +27,7 @@ export default function RoadmapScreen() {
   const roadmapId = params.roadmapId || storedRoadmapId;
   const roadmap = useAppStore((s) => s.roadmap);
   const xp = useAppStore((s) => s.xp);
+  const level = useAppStore((s) => s.level);
   const setRoadmap = useAppStore((s) => s.setRoadmap);
   const setProgress = useAppStore((s) => s.setProgress);
   const showXpPopup = useAppStore((s) => s.showXpPopup);
@@ -76,9 +75,10 @@ export default function RoadmapScreen() {
     }, [hydrated, roadmapId, load]),
   );
 
+  const primaryTopic = roadmap?.topics?.[0];
   const funFact =
     roadmap?.role_fun_fact?.trim() ||
-    (roadmap?.target_role ? roleFunFactFallback(roadmap.target_role) : "");
+    (primaryTopic?.title ? topicFunFactFallback(primaryTopic.title) : "");
 
   const displayTree = useMemo(
     () => applyLessonProgressToTree(roadmap?.skill_tree, roadmap ?? undefined),
@@ -132,15 +132,11 @@ export default function RoadmapScreen() {
         ) : (
           <>
             {funFact ? (
-              <View className="px-6 pt-4 mb-4">
-                <Card className="border border-accent/20 bg-accent/5">
-                  <Text className="text-accent text-xs uppercase tracking-widest mb-2">Fun fact</Text>
-                  <Text className="text-white/85 text-base leading-6">{funFact}</Text>
-                  {roadmap?.target_role ? (
-                    <Text className="text-white/40 text-xs mt-3">About {roadmap.target_role}</Text>
-                  ) : null}
-                </Card>
-              </View>
+              <MascotFunFact
+                fact={funFact}
+                level={level || calculateLevel(xp)}
+                topicLabel={primaryTopic?.title}
+              />
             ) : null}
 
             <View className="px-6 pb-2">
