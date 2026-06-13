@@ -39,6 +39,7 @@ def seed() -> None:
         "skills_missing": ["Machine Learning", "Docker"],
         "skills_partial": ["Python"],
         "gap_score": 62,
+        "role_fun_fact": "The title 'ML Engineer' barely existed before 2015 — today it's one of the fastest-growing job titles in tech, with demand outpacing supply by nearly 3x.",
         "ideal_candidate_summary": "A strong ML Engineer combines solid Python and ML fundamentals with production deployment skills using Docker and cloud platforms.",
         "ideal_skills": ["Python", "Machine Learning", "PyTorch", "Docker", "SQL", "MLOps", "Git", "Statistics"],
         "strengths": [

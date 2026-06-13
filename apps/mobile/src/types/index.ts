@@ -63,6 +63,7 @@ export interface GapAnalysis {
   skills_missing: string[];
   skills_partial: string[];
   gap_score: number;
+  role_fun_fact?: string;
   ideal_candidate_summary: string;
   ideal_skills: string[];
   strengths: SkillAssessment[];
@@ -162,6 +163,8 @@ export interface Roadmap {
   title: string;
   target_role: string;
   gap_score: number;
+  role_fun_fact?: string;
+  skill_tree?: SkillTreeBranch | null;
   session_id?: string | null;
   topics: Topic[];
 }

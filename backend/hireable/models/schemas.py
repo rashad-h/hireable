@@ -76,6 +76,7 @@ class GapAnalysis(BaseModel):
     skills_missing: list[str] = Field(default_factory=list)
     skills_partial: list[str] = Field(default_factory=list)
     gap_score: int = 0
+    role_fun_fact: str = ""
     ideal_candidate_summary: str = ""
     ideal_skills: list[str] = Field(default_factory=list)
     strengths: list[SkillAssessment] = Field(default_factory=list)
@@ -166,6 +167,8 @@ class RoadmapSchema(BaseModel):
     title: str
     target_role: str
     gap_score: int
+    role_fun_fact: str = ""
+    skill_tree: SkillTreeBranch | None = None
     session_id: str | None = None
     topics: list[TopicSchema] = Field(default_factory=list)
 

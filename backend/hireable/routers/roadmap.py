@@ -6,6 +6,7 @@ from sqlalchemy.orm import Session, joinedload
 from hireable.database import get_db
 from hireable.models.db import Lesson, Progress, Roadmap, SessionModel, Subtopic, Topic
 from hireable.models.schemas import (
+    GapAnalysis,
     LessonSchema,
     RoadmapSchema,
     RoadmapSummary,
@@ -13,6 +14,7 @@ from hireable.models.schemas import (
     TopicSchema,
 )
 from hireable.routers.progress import calculate_level, get_session_xp
+from hireable.services.skill_tree_progress import apply_lesson_progress_to_tree
 
 router = APIRouter(prefix="/api/roadmap", tags=["roadmap"])
 
@@ -88,14 +90,43 @@ def _build_roadmap_schema(db: Session, roadmap: Roadmap, session_id: str | None 
             )
         )
 
+    base_tree = _parse_skill_tree(roadmap.gap_analysis)
+    skill_tree = (
+        apply_lesson_progress_to_tree(base_tree, roadmap, completed)
+        if session_id and base_tree
+        else base_tree
+    )
+
     return RoadmapSchema(
         id=roadmap.id,
         title=roadmap.title,
         target_role=roadmap.target_role,
         gap_score=roadmap.gap_score,
+        role_fun_fact=_parse_gap_field(roadmap.gap_analysis, "role_fun_fact"),
+        skill_tree=skill_tree,
         session_id=roadmap.session_id,
         topics=topics_out,
     )
+
+
+def _parse_gap_field(gap_analysis_json: str, field: str) -> str:
+    if not gap_analysis_json:
+        return ""
+    try:
+        data = json.loads(gap_analysis_json)
+        return str(data.get(field, "") or "")
+    except json.JSONDecodeError:
+        return ""
+
+
+def _parse_skill_tree(gap_analysis_json: str):
+    if not gap_analysis_json:
+        return None
+    try:
+        gap = GapAnalysis.model_validate_json(gap_analysis_json)
+        return gap.skill_tree
+    except Exception:
+        return None
 
 
 @router.get("/{roadmap_id}", response_model=RoadmapSchema)

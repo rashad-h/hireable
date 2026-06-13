@@ -13,6 +13,8 @@ async def analyze_gaps(cv_data: CVData, job_requirements: JobRequirements, targe
                 "- skills_missing (array of strings)\n"
                 "- skills_partial (array of strings)\n"
                 "- gap_score (integer 0-100, current fit for the role)\n"
+                "- role_fun_fact (one surprising, specific fun fact about the target job title or role — "
+                "e.g. history, demand, salary trivia, or something counterintuitive. Keep it to 1-2 sentences.)\n"
                 "- ideal_candidate_summary (2-3 sentences describing the perfect hire for this role)\n"
                 "- ideal_skills (array of 8-12 skills the ideal candidate would have)\n"
                 "- strengths (array of {skill, detail} — what the candidate does well, tied to their CV)\n"

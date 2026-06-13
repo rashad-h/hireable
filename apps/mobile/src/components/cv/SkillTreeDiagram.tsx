@@ -1,9 +1,11 @@
 import { useMemo, useState } from "react";
 import { Pressable, Text, View } from "react-native";
+import { router } from "expo-router";
 import Svg, { Circle } from "react-native-svg";
 
-import type { SkillTreeBranch, SkillTreeStatus } from "@/types";
+import type { Roadmap, SkillTreeBranch, SkillTreeStatus } from "@/types";
 import { branchCoverage, countSkillStatuses, isLeaf, normalizeSkillTree } from "@/utils/skillTree";
+import { findJumpToLesson, type LessonJumpTarget } from "@/utils/skillTreeProgress";
 
 const STATUS = {
   known: {
@@ -52,12 +54,25 @@ function Legend({ compact }: { compact?: boolean }) {
   );
 }
 
-function LeafChip({ node, compact }: { node: SkillTreeBranch; compact?: boolean }) {
+function LeafChip({
+  node,
+  compact,
+  jumpTarget,
+}: {
+  node: SkillTreeBranch;
+  compact?: boolean;
+  jumpTarget?: LessonJumpTarget | null;
+}) {
   const status = node.status ?? "missing";
   const style = STATUS[status];
-  return (
+  const isComplete = status === "known";
+  const canJump = Boolean(jumpTarget && !isComplete);
+
+  const chip = (
     <View
-      className={`rounded-lg flex-row items-center gap-1 ${compact ? "px-2 py-1" : "px-2.5 py-1.5"}`}
+      className={`rounded-lg flex-row items-center gap-1 ${compact ? "px-2 py-1" : "px-2.5 py-1.5"} ${
+        canJump ? "pr-1.5" : ""
+      }`}
       style={{
         backgroundColor: style.bg,
         borderWidth: 1.5,
@@ -66,10 +81,31 @@ function LeafChip({ node, compact }: { node: SkillTreeBranch; compact?: boolean 
       }}
     >
       <Text style={{ color: style.text, fontSize: compact ? 10 : 11, fontWeight: "800" }}>{style.icon}</Text>
-      <Text style={{ color: style.text, fontSize: compact ? 11 : 12, fontWeight: "600" }} numberOfLines={1}>
+      <Text
+        style={{ color: style.text, fontSize: compact ? 11 : 12, fontWeight: "600" }}
+        numberOfLines={1}
+        className="flex-shrink"
+      >
         {node.name}
       </Text>
+      {canJump ? (
+        <View className="ml-0.5 px-1.5 py-0.5 rounded-md bg-white/10">
+          <Text style={{ color: style.text, fontSize: compact ? 9 : 10, fontWeight: "700" }}>Go →</Text>
+        </View>
+      ) : null}
     </View>
+  );
+
+  if (!canJump || !jumpTarget) return chip;
+
+  return (
+    <Pressable
+      onPress={() => router.push(`/roadmap/${jumpTarget.topicId}/${jumpTarget.lessonId}`)}
+      accessibilityRole="button"
+      accessibilityLabel={`Jump to lesson: ${jumpTarget.lessonTitle}`}
+    >
+      {chip}
+    </Pressable>
   );
 }
 
@@ -96,6 +132,7 @@ function ExpandableBranch({
   expanded,
   onToggle,
   compact,
+  roadmap,
 }: {
   node: SkillTreeBranch;
   path: string;
@@ -103,6 +140,7 @@ function ExpandableBranch({
   expanded: Set<string>;
   onToggle: (path: string) => void;
   compact?: boolean;
+  roadmap?: Roadmap | null;
 }) {
   const isOpen = expanded.has(path);
   const coverage = branchCoverage(node);
@@ -110,9 +148,10 @@ function ExpandableBranch({
   const gapCount = leaves.filter((l) => l.status === "missing").length;
 
   if (isLeaf(node)) {
+    const jumpTarget = roadmap ? findJumpToLesson(node.name, roadmap) : null;
     return (
       <View style={{ paddingLeft: depth * 10 }} className="mb-1">
-        <LeafChip node={node} compact={compact} />
+        <LeafChip node={node} compact={compact} jumpTarget={jumpTarget} />
       </View>
     );
   }
@@ -154,7 +193,11 @@ function ExpandableBranch({
           {node.children.map((child) =>
             isLeaf(child) ? (
               <View key={child.name} className="mb-1">
-                <LeafChip node={child} compact={compact} />
+                <LeafChip
+                  node={child}
+                  compact={compact}
+                  jumpTarget={roadmap ? findJumpToLesson(child.name, roadmap) : null}
+                />
               </View>
             ) : (
               <ExpandableBranch
@@ -165,6 +208,7 @@ function ExpandableBranch({
                 expanded={expanded}
                 onToggle={onToggle}
                 compact={compact}
+                roadmap={roadmap}
               />
             ),
           )}
@@ -178,9 +222,10 @@ interface SkillTreeDiagramProps {
   targetRole?: string;
   tree: SkillTreeBranch | null | undefined;
   compact?: boolean;
+  roadmap?: Roadmap | null;
 }
 
-export function SkillTreeDiagram({ targetRole, tree, compact }: SkillTreeDiagramProps) {
+export function SkillTreeDiagram({ targetRole, tree, compact, roadmap }: SkillTreeDiagramProps) {
   const root = useMemo(() => normalizeSkillTree(tree, targetRole ?? "Target Role"), [tree, targetRole]);
   const stats = useMemo(() => countSkillStatuses(root), [root]);
   const [expanded, setExpanded] = useState<Set<string>>(() => defaultExpandedPaths(root));
@@ -270,7 +315,9 @@ export function SkillTreeDiagram({ targetRole, tree, compact }: SkillTreeDiagram
         </View>
       )}
 
-      <Text className="text-white/35 text-[10px] px-1 mb-2">Tap a section to expand</Text>
+      <Text className="text-white/35 text-[10px] px-1 mb-2">
+        {roadmap ? "Tap a section to expand · Tap a gap to jump to its lesson" : "Tap a section to expand"}
+      </Text>
 
       {root.children.map((child) => (
         <ExpandableBranch
@@ -281,6 +328,7 @@ export function SkillTreeDiagram({ targetRole, tree, compact }: SkillTreeDiagram
           expanded={expanded}
           onToggle={toggle}
           compact={compact}
+          roadmap={roadmap}
         />
       ))}
     </View>
