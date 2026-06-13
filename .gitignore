@@ -17,3 +17,17 @@ Thumbs.db
 # Build outputs
 dist/
 build/
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+backend/.venv/
+backend/hireable.db
+backend/uploads/
+
+# Expo
+apps/mobile/.expo/
+apps/mobile/ios/
+apps/mobile/android/
+apps/mobile/dist/
